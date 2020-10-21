@@ -52,12 +52,28 @@ export default function Home({ data, result }) {
   
     request();
   }, [current]);
+
   function handleLoadMore() {
     updatePage(prev => {
       return {
         ...prev,
         current: page?.next
       }
+    });
+  }
+
+  function handleOnSubmitSearch(e) {
+    e.preventDefault();
+  
+    const { currentTarget = {} } = e;
+    const fields = Array.from(currentTarget?.elements);
+    const fieldQuery = fields.find(field => field.name === 'query');
+  
+    const value = fieldQuery.value || '';
+    const endpoint = `https://rickandmortyapi.com/api/character/?name=${value}`;
+  
+    updatePage({
+      current: endpoint
     });
   }
   
@@ -76,6 +92,12 @@ export default function Home({ data, result }) {
         <p className={styles.description}>
           Rick and Morty Character Wiki
         </p>
+
+        <form className="search" onSubmit={handleOnSubmitSearch}>
+          <input name="query" type="search" />
+          <button>Search</button>
+        </form>
+
         <div>
           <ul className={styles.grid}>
             {results.map(result => {
