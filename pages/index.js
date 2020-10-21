@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import Head from 'next/head'
 import styles from '../styles/Home.module.css'
 
@@ -17,7 +18,48 @@ export async function getServerSideProps() {
 
 export default function Home({ data, result }) {
   console.log('data', data)
-  const { results = [] } = data;
+  const { info, results: defaultResults = [] } = data;
+  const [results, updateResults] = useState(defaultResults);
+  const [page, updatePage] = useState({
+    ...info,
+    current: defaultEndpoint
+  })
+  const { current } = page;
+  useEffect(() => {
+    if ( current === defaultEndpoint ) return;
+  
+    async function request() {
+      const res = await fetch(current)
+      const nextData = await res.json();
+  
+      updatePage({
+        current,
+        ...nextData.info
+      });
+  
+      if ( !nextData.info?.prev ) {
+        updateResults(nextData.results);
+        return;
+      }
+  
+      updateResults(prev => {
+        return [
+          ...prev,
+          ...nextData.results
+        ]
+      });
+    }
+  
+    request();
+  }, [current]);
+  function handleLoadMore() {
+    updatePage(prev => {
+      return {
+        ...prev,
+        current: page?.next
+      }
+    });
+  }
   
   return (
     <div className={styles.container}>
@@ -34,12 +76,14 @@ export default function Home({ data, result }) {
         <p className={styles.description}>
           Rick and Morty Character Wiki
         </p>
-
-          <ul className="grid">
+        <div>
+          <ul className={styles.grid}>
             {results.map(result => {
               const { id, name, image } = result;
+              
               return (
-                <li key={id} className="card">
+                
+                <li key={id} className={styles.card}>
                 <a href="#">
                 <img src={image} alt={`${name} Thumbnail`} />
                 <h3>{ name }</h3>
@@ -48,9 +92,13 @@ export default function Home({ data, result }) {
               )
             })}
           </ul>
+          <p>
+          <button className={styles.button} onClick={handleLoadMore}>Load More</button>
+          </p>
+        </div>
       </main>
 
-      <footer className={styles.footer}>
+      {/* <footer className={styles.footer}>
         <a
           href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
           target="_blank"
@@ -59,7 +107,7 @@ export default function Home({ data, result }) {
           Powered by{' '}
           <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
         </a>
-      </footer>
+      </footer> */}
     </div>
   )
 }
